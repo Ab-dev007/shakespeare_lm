@@ -1,147 +1,121 @@
 # Shakespeare Language Model
 
-A character-level transformer language model trained on the complete works of Shakespeare, built from scratch using PyTorch.
+A character-level language model built from scratch in PyTorch, progressing from a bigram baseline to a GPT-style transformer trained on Tiny Shakespeare.
 
-This project implements the full GPT-style transformer architecture from first principles — every component built and understood from the ground up, with no black boxes.
+**Python · PyTorch · Causal self-attention · Autoregressive generation**
 
-## Results
+This learning project implements the data pipeline, model components, and training loop directly, making it possible to follow the path from raw text to generated characters.
 
-| Model | Parameters | Val Loss | Sample Output |
-|-------|-----------|----------|---------------|
+## Reported results
+
+| Model | Parameters | Validation loss | Sample output |
+| --- | ---: | ---: | --- |
 | Bigram | 4,225 | ~2.4 | `HERDms t of IXf hasen d` |
 | Transformer | 209,729 | ~1.75 | `WARWICK: Now how their come, our chown` |
 
-The transformer model learned Shakespeare character names, dialogue formatting, punctuation placement, and basic English grammar structure purely from character-level statistics.
+These are approximate results recorded for this project, rather than a standardized benchmark. The sample illustrates emerging dialogue formatting and character names; the generated text still has substantial grammatical and semantic limitations.
 
 ## Architecture
 
-A GPT-style autoregressive transformer with the following components:
+The transformer uses:
 
-- **Token embeddings** — learned character representations
-- **Positional embeddings** — learned position representations
-- **Multi-head self-attention** — causal (masked) attention with multiple heads in parallel
-- **Feed-forward layers** — position-wise MLP with 4x expansion
-- **Residual connections** — skip connections around attention and feed-forward
-- **Layer normalisation** — pre-norm configuration
-- **Dropout** — regularisation throughout
+- Learned character and positional embeddings
+- Causal multi-head self-attention
+- Position-wise feed-forward layers with 4× expansion
+- Residual connections and pre-norm layer normalization
+- Dropout for regularization
 
-### Hyperparameters
+The training workflow includes validation, gradient clipping, and checkpointing. A bigram model provides a simple baseline for comparison.
 
-vocab_size = 65 (unique characters in dataset)
-block_size = 32 (context length)
-d_model = 64 (embedding dimension)
-num_heads = 4 (attention heads per block)
-num_layers = 4 (transformer blocks)
+### Documented configuration
+
+```python
+vocab_size = 65
+block_size = 32
+d_model = 64
+num_heads = 4
+num_layers = 4
 dropout = 0.2
 batch_size = 32
 learning_rate = 1e-3
 training_steps = 5000
+```
 
-## Project Structure
+## Quick start
 
-shakespeare_lm/
-│
-├── src/
-│ ├── data/
-│ │ ├── download.py # Downloads Tiny Shakespeare dataset
-│ │ ├── tokenizer.py # Character-level tokenizer (build_vocab, encode, decode)
-│ │ └── tensor_creation.py # Encodes dataset, splits 90/10, saves to disk
-│ │
-│ ├── models/
-│ │ ├── bigram.py # Baseline bigram language model
-│ │ └── transformer.py # Full transformer (AttentionHead, MultiHeadAttention,
-│ │ # FeedForward, Block, TransformerLanguageModel)
-│ │
-│ └── training/
-│ ├── data_loader.py # load_dataset, load_vocab, get_batch
-│ ├── train.py # Bigram training loop
-│ └── transformer_training.py # Transformer training loop with validation,
-│ # gradient clipping, and checkpointing
-│
-├── data/
-│ ├── raw/ # Raw downloaded text (gitignored)
-│ └── processed/ # Encoded tensors and vocab (gitignored)
-│
-├── checkpoints/ # Saved model weights (gitignored)
-├── notebooks/
-│ └── 01_data_exploration.ipynb
-| └── 01_attention.ipynb
-├── environment.yml
-└── README.md
-
-
-## Setup
-
-### Prerequisites
-
-- macOS with Apple Silicon (MPS backend) or any machine with CUDA/CPU
-- Miniforge (conda)
-
-### Installation
+Prerequisites: Git, Conda or Miniforge, and a compatible PyTorch installation. The original project setup targets Apple Silicon, with CPU/CUDA use depending on the device configuration in the training code.
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/shakespeare_lm.git
+git clone https://github.com/MindForge-Abhishek/shakespeare_lm.git
 cd shakespeare_lm
 
-# Create and activate conda environment
 conda env create -f environment.yml
 conda activate shakespeare_lm
-
-# Install PyTorch
 pip install torch
 ```
 
-### Prepare Data
+### Prepare the data
+
+Run commands from the repository root:
 
 ```bash
-# Download the dataset
 python -m src.data.download
-
-# Create processed tensors
 python -m src.data.tensor_creation
 ```
 
-### Train
+### Train the models
 
 ```bash
-# Train the bigram baseline
+# Bigram baseline
 python -m src.training.train
 
-# Train the transformer
+# Transformer
 python -m src.training.transformer_training
 ```
 
-Trained model is saved to `checkpoints/transformer.pt`.
+The documented transformer checkpoint path is `checkpoints/transformer.pt`.
 
-## What Was Built And Learned
+## Project structure
 
-This project was built as a structured learning exercise to understand every component of modern language models from first principles.
+```text
+shakespeare_lm/
+├── src/
+│   ├── data/
+│   │   ├── download.py
+│   │   ├── tokenizer.py
+│   │   └── tensor_creation.py
+│   ├── models/
+│   │   ├── bigram.py
+│   │   └── transformer.py
+│   └── training/
+│       ├── data_loader.py
+│       ├── train.py
+│       └── transformer_training.py
+├── notebooks/           # Data exploration and attention experiments
+├── data/                # Generated locally; excluded from version control
+│   ├── raw/
+│   └── processed/
+├── checkpoints/         # Generated model weights; excluded from version control
+├── environment.yml
+└── README.md
+```
 
-### Concepts covered
+## What I explored
 
-- Character-level tokenization and vocabulary construction
-- Tensor creation, train/validation splitting
-- Batch sampling for sequential text data
-- The bigram language model as a baseline
-- Cross-entropy loss and what it measures
-- The training loop — forward, loss, backward, step
-- Self-attention — queries, keys, values, scaled dot-product attention
-- Causal masking — why future tokens must be hidden during training
-- Multi-head attention — parallel attention heads, concatenation, output projection
-- Feed-forward layers — expansion, ReLU non-linearity, compression
-- Residual connections — gradient flow, vanishing gradient problem
-- Layer normalisation — training stability, pre-norm vs post-norm
-- Positional embeddings — why attention is position-blind without them
-- Dropout — regularisation, train vs eval mode
-- Gradient clipping — preventing exploding gradients
-- Checkpointing — saving and resuming training
-- Autoregressive text generation — sampling, context cropping
+| Area | Concepts |
+| --- | --- |
+| Data | Character-level vocabulary, encoding/decoding, tensors, train/validation splitting |
+| Modeling | Bigram baseline, attention, causal masking, positional embeddings, transformer blocks |
+| Optimization | Cross-entropy loss, backpropagation, dropout, gradient clipping |
+| Training workflow | Batch sampling, validation, checkpointing |
+| Generation | Autoregressive sampling and context cropping |
 
-## Dataset
+## Dataset and scope
 
-[Tiny Shakespeare](https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt) — 1,115,394 characters, 65 unique characters, complete works of Shakespeare.
+The project uses [Tiny Shakespeare](https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt), a small Shakespeare text corpus containing 1,115,394 characters and 65 unique characters in the documented dataset. It is not the complete works of Shakespeare.
+
+This is an educational model with a short context window and a small training corpus. Its results demonstrate the implementation and learning process, not general-purpose language understanding or production readiness.
 
 ## Acknowledgements
 
-Architecture based on the transformer introduced in [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (Vaswani et al., 2017).
+The transformer architecture builds on [Attention Is All You Need](https://arxiv.org/abs/1706.03762) by Vaswani et al. (2017). The dataset is distributed through Andrej Karpathy's [char-rnn repository](https://github.com/karpathy/char-rnn).
